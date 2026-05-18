@@ -313,6 +313,46 @@
     .detail-cell-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-ter); margin-bottom: 4px; }
     .detail-cell-val   { font-size: 13px; color: var(--text); line-height: 1.6; }
 
+    /* ── Chapter overview ──────────────────────────────────────────── */
+    .ch-overview { padding: 0; }
+    .ch-overview-header { margin-bottom: 2rem; }
+    .ch-overview-num { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-ter); font-weight: 500; margin-bottom: .4rem; }
+    .ch-overview-title { font-size: 26px; font-weight: 500; color: var(--text); line-height: 1.2; margin-bottom: 0; }
+
+    .ch-overview-block { margin-bottom: 2rem; }
+    .ch-overview-block-title { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-ter); font-weight: 500; margin-bottom: .75rem; padding-bottom: .5rem; border-bottom: 0.5px solid var(--border); }
+
+    .ch-obj-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .ch-obj-list li { font-size: 14px; color: var(--text-sec); line-height: 1.5; padding-left: 16px; position: relative; }
+    .ch-obj-list li::before { content: '·'; position: absolute; left: 0; color: var(--accent); font-size: 16px; line-height: 1.3; }
+
+    .ch-lesson-list { display: flex; flex-direction: column; gap: 8px; }
+    .ch-lesson-card {
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg); padding: .9rem 1.25rem;
+      cursor: pointer; transition: border-color .15s;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .ch-lesson-card:hover { border-color: var(--border-md); }
+    .ch-lesson-card-left { display: flex; flex-direction: column; gap: 2px; }
+    .ch-lesson-card-num { font-size: 11px; color: var(--text-ter); }
+    .ch-lesson-card-title { font-size: 14px; font-weight: 500; color: var(--text); }
+    .ch-lesson-card i { font-size: 16px; color: var(--text-ter); }
+
+    .ch-refl-list { display: flex; flex-direction: column; gap: 6px; }
+    .ch-refl-item {
+      font-size: 13px; color: var(--text-sec);
+      padding: .6rem .75rem;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer; line-height: 1.5; transition: all .15s;
+      display: flex; align-items: flex-start; gap: .5rem;
+    }
+    .ch-refl-item:hover { background: var(--surface); border-color: var(--border-md); }
+    .ch-refl-item i { flex-shrink: 0; font-size: 14px; color: var(--text-ter); margin-top: 2px; }
+    .ch-refl-hint { font-size: 12px; color: var(--accent); padding: .4rem .75rem .5rem 2rem; display: none; line-height: 1.5; }
+    .ch-refl-hint.open { display: block; }
+
     /* ── Footer ─────────────────────────────────────────────────── */
     .footer { text-align: center; padding: 1.5rem; font-size: 12px; color: var(--text-ter); border-top: 0.5px solid var(--border); }
 
@@ -345,7 +385,7 @@ const DATA = [{"id": 1, "title": "What is Claude Code?", "objectives": ["Razumet
 
 let currentLang       = 'sl';
 let currentChapterId  = 1;
-let currentSectionId  = 1;
+let currentSectionId  = null;
 let currentView       = 'cards';
 let selectedFeatureId = null;
 
@@ -372,7 +412,7 @@ function renderSidebar() {
       <i class="ti ti-chevron-right ch-chevron" aria-hidden="true"></i>`;
     chBtn.onclick = () => {
       currentChapterId = ch.id;
-      currentSectionId = ch.sections[0]?.id ?? 1;
+      currentSectionId = null;
       selectedFeatureId = null;
       render();
     };
@@ -382,14 +422,7 @@ function renderSidebar() {
       const sec = document.createElement('div');
       sec.className = 'ch-sections open';
 
-      // Objectives
-      sec.innerHTML = `
-        <div class="obj-panel">
-          <div class="obj-title">Learning Objectives</div>
-          <ul class="obj-list">${ch.objectives.map(o=>`<li>${o}</li>`).join('')}</ul>
-        </div>`;
-
-      // Lesson items
+      // Lesson items only
       ch.sections.forEach(s => {
         const isCur = s.id === currentSectionId;
         const item = document.createElement('div');
@@ -400,23 +433,6 @@ function renderSidebar() {
         item.onclick = () => { currentSectionId = s.id; selectedFeatureId = null; render(); };
         sec.appendChild(item);
       });
-
-      // Reflections
-      if (ch.reflections?.length) {
-        const rp = document.createElement('div');
-        rp.className = 'refl-panel';
-        rp.innerHTML = `<div class="refl-title">Refleksija</div>`;
-        ch.reflections.forEach((r, i) => {
-          const [q, hint] = r.split('|');
-          const id = `refl-${ch.id}-${i}`;
-          rp.innerHTML += `
-            <div class="refl-item" onclick="toggleRefl('${id}')">
-              <i class="ti ti-help-circle" aria-hidden="true"></i><span>${q}</span>
-            </div>
-            <div class="refl-hint" id="${id}">${hint||''}</div>`;
-        });
-        sec.appendChild(rp);
-      }
 
       nav.appendChild(sec);
     }
@@ -436,9 +452,78 @@ function renderSidebar() {
 
 function toggleRefl(id) { document.getElementById(id)?.classList.toggle('open'); }
 
+/* ── Chapter Overview ──────────────────────────────────────────── */
+function renderChapterOverview(ch) {
+  const panel = document.getElementById('lesson-panel');
+  if (!ch) return;
+
+  let html = `
+    <h1 class="sr-only">Poglavje ${ch.id}: ${ch.title}</h1>
+    <div class="ch-overview">
+      <div class="ch-overview-header">
+        <div class="ch-overview-num">Poglavje ${ch.id}</div>
+        <div class="ch-overview-title">${ch.title}</div>
+      </div>
+
+      <div class="ch-overview-block">
+        <div class="ch-overview-block-title">Learning Objectives</div>
+        <ul class="ch-obj-list">
+          ${ch.objectives.map(o => `<li>${o}</li>`).join('')}
+        </ul>
+      </div>
+
+      <div class="ch-overview-block">
+        <div class="ch-overview-block-title">Lekcije</div>
+        <div class="ch-lesson-list">
+          ${ch.sections.map(s => `
+            <div class="ch-lesson-card" onclick="goToLesson(${ch.id}, ${s.id})">
+              <div class="ch-lesson-card-left">
+                <span class="ch-lesson-card-num">${s.lesson}</span>
+                <span class="ch-lesson-card-title">${s.title.split(':')[0].trim()}</span>
+              </div>
+              <i class="ti ti-chevron-right" aria-hidden="true"></i>
+            </div>`).join('')}
+        </div>
+      </div>`;
+
+  if (ch.reflections?.length) {
+    html += `
+      <div class="ch-overview-block">
+        <div class="ch-overview-block-title">Refleksija</div>
+        <div class="ch-refl-list">`;
+    ch.reflections.forEach((r, i) => {
+      const [q, hint] = r.split('|');
+      const id = `chrefl-${ch.id}-${i}`;
+      html += `
+          <div class="ch-refl-item" onclick="toggleRefl('${id}')">
+            <i class="ti ti-help-circle" aria-hidden="true"></i><span>${q}</span>
+          </div>
+          <div class="ch-refl-hint" id="${id}">${hint || ''}</div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  html += `</div>`;
+  panel.innerHTML = html;
+}
+
+function goToLesson(chId, secId) {
+  currentChapterId = chId;
+  currentSectionId = secId;
+  selectedFeatureId = null;
+  render();
+}
+
 /* ── Lesson ─────────────────────────────────────────────────────── */
 function renderLesson() {
   const ch  = DATA.find(c => c.id === currentChapterId);
+
+  // Chapter overview mode
+  if (currentSectionId === null) {
+    renderChapterOverview(ch);
+    return;
+  }
+
   const sec = ch?.sections.find(s => s.id === currentSectionId);
   if (!sec) return;
 

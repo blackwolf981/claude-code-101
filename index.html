@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Code 101 — Interactive Learning Guide</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+
+  <style>
+    :root {
+      --bg:        #111111;
+      --surface:   #1c1c1c;
+      --border:    rgba(255,255,255,0.07);
+      --border-md: rgba(255,255,255,0.13);
+      --text:      #F0F0F0;
+      --text-sec:  #A0A0A0;
+      --text-ter:  #606060;
+      --accent:    #FFD166;
+      --accent-bg: #2b2200;
+      --radius:    10px;
+      --radius-lg: 14px;
+      --sidebar-w: 270px;
+      --header-h:  53px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      font-family: system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    button { font-family: system-ui, -apple-system, sans-serif; }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .header {
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border-md);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      height: var(--header-h);
+    }
+    .header-title {
+      font-family: Georgia, serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .header-sub {
+      font-size: 12px;
+      color: var(--text-sec);
+    }
+    .header-badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 500;
+      background: var(--accent-bg);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────── */
+    .layout { display: flex; flex: 1; min-height: 0; }
+
+    /* ── Sidebar ────────────────────────────────────────────────── */
+    #sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 0.5px solid var(--border-md);
+      position: sticky;
+      top: var(--header-h);
+      height: calc(100vh - var(--header-h));
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    #sb-nav { flex: 1; }
+
+    .ch-btn {
+      width: 100%;
+      text-align: left;
+      padding: 10px 1.25rem;
+      background: none;
+      border: none;
+      border-left: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      transition: all .15s;
+    }
+    .ch-btn:hover { background: var(--bg); }
+    .ch-btn.active { border-left-color: var(--accent); background: var(--accent-bg); }
+    .ch-btn-inner { flex: 1; min-width: 0; }
+    .ch-part {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-ter);
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    .ch-btn.active .ch-part { color: var(--accent); }
+    .ch-name { display: block; font-size: 12.5px; color: var(--text-sec); line-height: 1.35; }
+    .ch-btn.active .ch-name { color: var(--accent); font-weight: 500; }
+    .ch-chevron {
+      font-size: 13px;
+      color: var(--text-ter);
+      transition: transform .2s;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .ch-btn.active .ch-chevron { transform: rotate(90deg); color: var(--accent); }
+
+    .ch-sections { display: none; background: var(--bg); border-bottom: 0.5px solid var(--border); }
+    .ch-sections.open { display: block; }
+
+    .obj-panel { padding: 10px 1.25rem 10px 1.5rem; border-bottom: 0.5px solid var(--border); }
+    .obj-title { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-ter); margin-bottom: 6px; }
+    .obj-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .obj-list li { font-size: 12px; color: var(--text-sec); line-height: 1.4; padding-left: 12px; position: relative; }
+    .obj-list li::before { content: '·'; position: absolute; left: 0; color: var(--accent); }
+
+    .sidebar-item {
+      display: flex; flex-direction: column;
+      padding: 8px 1.25rem 8px 1.5rem;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: all .15s;
+    }
+    .sidebar-item:hover { background: var(--surface); }
+    .sidebar-item.active { border-left-color: var(--accent); background: var(--surface); }
+    .si-lesson { font-size: 11px; color: var(--text-ter); margin-bottom: 1px; }
+    .si-title  { font-size: 13px; color: var(--text); line-height: 1.4; }
+    .sidebar-item.active .si-lesson,
+    .sidebar-item.active .si-title { color: var(--accent); font-weight: 500; }
+
+    .refl-panel { padding: 10px 1.25rem 12px; border-top: 0.5px solid var(--border); }
+    .refl-title { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-ter); margin-bottom: 6px; }
+    .refl-item {
+      font-size: 12px; color: var(--text-sec);
+      padding: .4rem .5rem;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer; margin-bottom: 4px;
+      line-height: 1.4; transition: all .15s;
+      display: flex; align-items: flex-start; gap: .4rem;
+    }
+    .refl-item:hover { background: var(--surface); border-color: var(--border-md); }
+    .refl-item i { flex-shrink: 0; font-size: 13px; color: var(--text-ter); margin-top: 1px; }
+    .refl-hint { font-size: 11.5px; color: var(--accent); padding: .35rem .5rem .5rem 1.5rem; display: none; line-height: 1.45; }
+    .refl-hint.open { display: block; }
+
+    /* ── Language switcher ──────────────────────────────────────── */
+    .lang-bar { padding: .75rem 1.25rem; border-top: 0.5px solid var(--border-md); }
+    .lang-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-ter); margin-bottom: .4rem; }
+    .lang-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+    .lang-btn {
+      font-size: 11px; padding: 2px 8px; border-radius: 4px;
+      border: 0.5px solid var(--border-md); background: none;
+      cursor: pointer; color: var(--text-sec); transition: all .15s;
+    }
+    .lang-btn:hover { background: var(--surface); }
+    .lang-btn.active { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+
+    /* ── Content ────────────────────────────────────────────────── */
+    .content { flex: 1; padding: 2rem 2.5rem 3rem; max-width: 900px; overflow-y: auto; }
+
+    .sec-lesson { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-ter); font-weight: 500; margin-bottom: .5rem; }
+    .sec-title  { font-size: 22px; font-weight: 500; color: var(--text); line-height: 1.2; margin-bottom: .25rem; }
+    .sec-sub    { font-size: 13px; color: var(--text-sec); margin-bottom: 1.5rem; }
+    .sec-gap    { margin-bottom: 1.5rem; }
+
+    /* ── Notes ──────────────────────────────────────────────────── */
+    .note-youtube {
+      width: 100%; aspect-ratio: 16/9;
+      border-radius: var(--radius); overflow: hidden;
+      border: 0.5px solid var(--border-md); margin-bottom: 1.25rem;
+    }
+    .note-youtube iframe { width: 100%; height: 100%; display: block; border: none; }
+
+    .note-desc { font-size: 13px; color: var(--text-sec); line-height: 1.65; margin-bottom: 1rem; }
+
+    .note-tip {
+      display: flex; align-items: flex-start; gap: .5rem;
+      background: rgba(125,211,252,0.08); border-left: 2px solid #38BDF8;
+      padding: 9px 13px; font-size: 12px; line-height: 1.6;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: #7DD3FC; margin-bottom: .75rem;
+    }
+    .note-tip i { flex-shrink: 0; margin-top: .1rem; }
+
+    .note-warning {
+      display: flex; align-items: flex-start; gap: .5rem;
+      background: rgba(251,146,60,0.08); border-left: 2px solid #FB923C;
+      padding: 9px 13px; font-size: 12px; line-height: 1.6;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: #FB923C; margin-bottom: .75rem;
+    }
+    .note-warning i { flex-shrink: 0; margin-top: .1rem; }
+
+    .note-subsection {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+      color: var(--text-ter); padding-top: 1rem; margin: .5rem 0 .75rem;
+      border-top: 0.5px solid var(--border);
+    }
+
+    /* ── View toggle ────────────────────────────────────────────── */
+    .view-toggle { display: flex; gap: 6px; margin-bottom: 1.25rem; align-items: center; }
+    .view-label  { font-size: 12px; color: var(--text-ter); margin-right: 4px; }
+    .view-btn {
+      padding: 4px 12px; border-radius: 20px;
+      border: 0.5px solid var(--border-md); background: transparent;
+      font-size: 12px; color: var(--text-sec); cursor: pointer;
+      display: flex; align-items: center; gap: .3rem; transition: all .15s;
+    }
+    .view-btn:hover { background: var(--surface); }
+    .view-btn.active { background: var(--accent); color: #111; border-color: transparent; font-weight: 500; }
+
+    /* ── Feature cards ──────────────────────────────────────────── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px; margin-bottom: 1rem;
+    }
+    .feature-grid.hide { display: none; }
+
+    .feature-card {
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1rem 1.25rem;
+      cursor: pointer; transition: border-color .15s; user-select: none;
+    }
+    .feature-card:hover { border-color: var(--border-md); }
+    .feature-card.selected { border: 1.5px solid var(--accent); }
+
+    .badge {
+      display: inline-block; font-size: 10px; padding: 2px 8px;
+      border-radius: 20px; margin-bottom: 8px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .badge-when    { background: rgba(134,239,172,0.12); color: #86EFAC; }
+    .badge-caution { background: rgba(251,146,60,0.12);  color: #FB923C; }
+    .badge-rare    { background: rgba(255,255,255,0.07);  color: #A0A0A0; }
+
+    .feature-name {
+      font-size: 14px; font-weight: 500; color: var(--text);
+      margin-bottom: 4px; display: flex; align-items: center; gap: .35rem;
+    }
+    .feature-name i { font-size: 15px; color: var(--text-ter); }
+    .feature-desc { font-size: 12px; color: var(--text-sec); line-height: 1.5; }
+
+    /* ── Feature table ──────────────────────────────────────────── */
+    .features-table {
+      width: 100%; border-collapse: collapse; display: none;
+      margin-bottom: 1rem; font-size: 13px; background: var(--surface);
+      border-radius: var(--radius-lg); overflow: hidden;
+      border: 0.5px solid var(--border); table-layout: fixed;
+    }
+    .features-table.show { display: table; }
+    .features-table th {
+      text-align: left; padding: 9px 14px; background: var(--bg);
+      color: var(--text-sec); font-weight: 500; font-size: 11px;
+      text-transform: uppercase; letter-spacing: .04em;
+      border-bottom: 0.5px solid var(--border-md);
+    }
+    .features-table td {
+      padding: 10px 14px; border-bottom: 0.5px solid var(--border);
+      color: var(--text); vertical-align: top; line-height: 1.5; cursor: pointer;
+    }
+    .features-table tr:last-child td { border-bottom: none; }
+    .features-table tr:hover td { background: var(--bg); }
+    .features-table tr.row-selected td { background: var(--accent-bg); }
+
+    /* ── Detail panel — inline 2×2 ──────────────────────────────── */
+    .detail-panel {
+      background: var(--surface); border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1rem;
+    }
+    .detail-header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 1rem;
+    }
+    .detail-title {
+      font-size: 15px; font-weight: 500; color: var(--text);
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .detail-title i { color: var(--text-ter); font-size: 16px; }
+    .detail-title .badge { margin-bottom: 0; }
+    .detail-close {
+      background: none; border: 0.5px solid var(--border-md);
+      color: var(--text-ter); font-size: 12px; padding: 3px 10px;
+      border-radius: 20px; cursor: pointer;
+      display: flex; align-items: center; gap: 4px; transition: all .15s; flex-shrink: 0;
+    }
+    .detail-close:hover { color: var(--text); }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .detail-cell { padding: 10px 14px; background: var(--bg); border-radius: var(--radius); }
+    .detail-cell-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-ter); margin-bottom: 4px; }
+    .detail-cell-val   { font-size: 13px; color: var(--text); line-height: 1.6; }
+
+    /* ── Footer ─────────────────────────────────────────────────── */
+    .footer { text-align: center; padding: 1.5rem; font-size: 12px; color: var(--text-ter); border-top: 0.5px solid var(--border); }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <span class="header-title">Claude Code 101 — Interactive Learning Guide</span>
+  <span class="header-sub">Interaktivni učni vodič · Anthropic Academy · maj 2026</span>
+  <span class="header-badge">Certification Prep</span>
+</header>
+
+<div class="layout">
+  <aside id="sidebar">
+    <nav id="sb-nav" aria-label="Navigacija po tečaju"></nav>
+    <div class="lang-bar">
+      <div class="lang-label">Jezik / Language</div>
+      <div class="lang-grid" id="lang-grid"></div>
+    </div>
+  </aside>
+  <main class="content" id="lesson-panel" aria-label="Vsebina lekcije"></main>
+</div>
+
+<footer class="footer">Claude Code 101 · Anthropic Academy · 2026</footer>
+
+<script>
+const DATA = [{"id": 1, "title": "What is Claude Code?", "objectives": ["Razumeti, kaj je Claude Code in kako se razlikuje od Claude.ai", "Spoznati koncept AI agenta — zakaj je to ključna razlika", "Prepoznati glavne zmožnosti Claude Code v praksi", "Razumeti tri ključne koncepte za učinkovito uporabo"], "reflections": ["V čem se Claude Code razlikuje od orodij, ki jih že poznaš?|Claude Code je agent — ne samo odgovarja, ampak dela. Ima neposreden dostop do tvojih datotek in terminala, brez copy/paste.", "Kdaj bi raje ostal v nadzoru nad vsako akcijo Claude Code?|Ko delaš na kritičnem sistemu, ko nisi prepričan v navodila, ali ko se učiš novega projekta — Permission Model je tu tvoj zaveznik.", "Kaj bi naredil, če bi Claude Code med zanko predlagal akcijo, ki se ti zdi tvegana?|Plan Mode je za to. Prekini zanko, aktiviraj Plan Mode — Claude Code bo prebral vse in ti pokazal točen načrt, preden karkoli naredi.", "Kdaj bi izbral Plan Mode namesto Default Mode?|Plan Mode je za večje, tvegane naloge — ko ne veš točno, kaj bo Claude Code naredil. Default Mode je za vsakodnevno delo, korak za korakom."], "sections": [{"id": 1, "lesson": "Lekcija 1", "title": "What is Claude Code?", "features": [{"id": 1, "section_id": 1, "name": "AI Agent", "icon": "ti-robot", "badge_type": "when", "badge_text": "Ključni koncept", "short_desc": "Claude Code ni chatbot — je agent, ki sprejema odločitve in izvaja akcije", "what_it_does": "Deluje kot LLM v zanki — sprejema odločitve, izvaja akcije, preverja rezultate in nadaljuje. Ni samo chatbot, ki odgovarja — je agent, ki dela.", "when_to_use": "Ko razumeš razliko med chatbotom in agentom — to je osnova za vse ostalo v tečaju.", "when_not": "Agent ne pomeni nekontroliran. Claude Code vedno vpraša za dovoljenje pred vsako akcijo.", "why_it_matters": "Razlika med chatbotom in agentom je razlika med 'svetovalcem' in 'izvajalcem'. Claude Code dela, ne samo svetuje.", "sort_order": 1}, {"id": 2, "section_id": 1, "name": "Dostop do datotek", "icon": "ti-files", "badge_type": "when", "badge_text": "Neposreden dostop", "short_desc": "Bere in ureja datoteke po celotnem projektu — brez copy/paste", "what_it_does": "Ima neposreden dostop do tvojih datotek in celotne kode. Lahko bere, piše, preoblikuje in posodablja katerokoli datoteko v projektu.", "when_to_use": "Kadar imaš nalogo, ki vključuje več datotek hkrati — Claude Code sam najde vse relevantne dele.", "when_not": "Ne za enkratna vprašanja, ki ne zahtevajo dostopa do datotek — za to je Claude.ai primernejši.", "why_it_matters": "Konec copy/paste maratona. Claude Code vidi in ureja tvoj projekt kot celoto, ne samo fragmentov, ki jih prilepiš v chat.", "sort_order": 2}, {"id": 3, "section_id": 1, "name": "Terminal ukazi", "icon": "ti-terminal-2", "badge_type": "when", "badge_text": "Izvaja akcije", "short_desc": "Zažene skripte, testira, instaliira pakete — neposredno v tvojem sistemu", "what_it_does": "Izvaja ukaze v terminalu — build skripte, teste, namestitev paketov. Vidi rezultate in se na podlagi njih odloča, kaj narediti naprej.", "when_to_use": "Ko imaš nalogo, ki zahteva zagon kode, testiranje ali namestitev orodij.", "when_not": "Vedno preveri ukaz preden ga potrdiš — nekateri ukazi imajo stranske učinke na sistemu, ki jih je težko razveljaviti.", "why_it_matters": "Claude Code ne samo piše kodo — jo tudi zažene in preveri, ali deluje. To je razlika med predlogom in rešitvijo.", "sort_order": 3}, {"id": 4, "section_id": 1, "name": "Spletno iskanje", "icon": "ti-world-search", "badge_type": "when", "badge_text": "Vgrajeno", "short_desc": "Ko potrebuje dokumentacijo ali API reference, poišče sam", "what_it_does": "Kadar naleti na neznano knjižnico, API ali napako, samostojno poišče aktualne informacije na spletu.", "when_to_use": "Koristno pri delu z novejšimi knjižnicami ali hitro razvijajočimi se API-ji, kjer so informacije zastarele.", "when_not": "Iskanje po spletu upočasni odgovor — ni vedno potrebno za dobro znane tehnologije.", "why_it_matters": "Claude Code ni omejen na svoje znanje iz treninga. Doseže zunanji svet, kadar je to potrebno.", "sort_order": 4}, {"id": 5, "section_id": 1, "name": "Context Window", "icon": "ti-brain", "badge_type": "caution", "badge_text": "Razumej mejo", "short_desc": "Delovna memoria Claude Code — drži ogromno, a ne vsega hkrati", "what_it_does": "Context window je Claude-ova delovna memoria — koliko informacij lahko hkrati vidi in obdeluje. Za velike projekte to pomeni, da ne naloži vsega naenkrat, ampak strateško navigira.", "when_to_use": "Razumevanje context window pomaga pri pisanju boljših navodil — bolj fokusiranih, z manj odvečnega šuma.", "when_not": "Ne skrbi preveč — Claude Code sam pametno navigira po bazi kode in naloži le relevantne dele.", "why_it_matters": "To je agentic del — Claude Code ne bere celotne kode po vrsti, ampak strateško išče odgovore znotraj nje. Fokusirana navodila = boljši rezultati.", "sort_order": 5}, {"id": 6, "section_id": 1, "name": "Permission Model", "icon": "ti-lock-check", "badge_type": "when", "badge_text": "Vedno v nadzoru", "short_desc": "Pred vsako akcijo vpraša za dovoljenje — ti odločaš, koliko svobode ima", "what_it_does": "Pred vsakim ukazom ali spremembo datoteke Claude Code pokaže, kaj namerava narediti, in počaka na tvoje dovoljenje. Ti si vedno zadnja instanca.", "when_to_use": "Privzeto vedenje — priporočeno za začetnike in za kritične sisteme. Vedno veš, kaj se dogaja.", "when_not": "Za rutinska opravila ga lahko nastaviš na bolj avtonomno delovanje — a le ko zaupate drug drugemu.", "why_it_matters": "Ti si vedno v nadzoru. Claude Code je orodje, ne avtopilot. Dovoljenja so varovalo, ne ovira.", "sort_order": 6}, {"id": 7, "section_id": 1, "name": "Napake so možne", "icon": "ti-alert-triangle", "badge_type": "caution", "badge_text": "Ostani v zanki", "short_desc": "Claude Code ni popoln — napačno razume namen, over-engineera rešitve", "what_it_does": "Kot vsako AI orodje, Claude Code ni nezmotljiv. Napačno razume tvojo nalogo, uvede hrošče, ali predlaga preveč kompleksno rešitev.", "when_to_use": "Vedno ostani v zanki — pregleduj spremembe, preverjaj rezultate, sprašuj za razlago.", "when_not": "Ne prepusti dolgih, kompleksnih nalog brez vmesnega pregleda — verjetnost napake raste z dolžino naloge.", "why_it_matters": "Razumevanje omejitev ti da realna pričakovanja. Claude Code je zelo zmogljiv — a samo v rokah pozornega uporabnika.", "sort_order": 7}], "notes": [{"id": 1, "section_id": 1, "note_type": "youtube", "content": "fl1DSmwQKKY", "sort_order": -3}, {"id": 2, "section_id": 1, "note_type": "desc", "content": "Claude Code je agentic coding tool — razume tvojo kodo, ureja datoteke, zažene ukaze in se poveže z zunanjimi orodji. Ni samo chatbot: je AI agent, ki dela v tvojem sistemu.", "sort_order": -2}, {"id": 3, "section_id": 1, "note_type": "tip", "content": "Dostopen povsod: terminal, Visual Studio Code, Claude Desktop app, JetBrains IDEs, in splet.", "sort_order": -1}, {"id": 4, "section_id": 1, "note_type": "subsection-header", "content": "Tri koncepti za učinkovito uporabo", "sort_order": 10}, {"id": 5, "section_id": 1, "note_type": "warning", "content": "Claude Code ni popoln. Napačno razume namen, uvede hrošče, ali over-engineera rešitve. Ostani v zanki in pregleduj vsako večjo spremembo.", "sort_order": 11}]}, {"id": 2, "lesson": "Lekcija 2", "title": "How Claude Code Works: Agentna zanka in orodja", "features": [{"id": 8, "section_id": 2, "name": "Agentna zanka", "icon": "ti-refresh", "badge_type": "when", "badge_text": "Jedro sistema", "short_desc": "5-koračni cikel: prompt → kontekst → akcija → preveritev → konec ali ponovi", "what_it_does": "Ko vneseš prompt, Claude Code zbere kontekst, ki ga potrebuje, nato izvede akcijo (uredi datoteko, zažene ukaz), preveri rezultat in odloči: ali je naloga opravljena ali je treba ponoviti zanko.", "when_to_use": "Razumevanje zanke ti pomaga bolje strukturirati naloge — daljše razdeli na manjše, da imaš vmesni pregled nad rezultati.", "when_not": "Ne predpostavljaj, da se vse zgodi v eni zanki. Več iteracij je normalno, ne napaka.", "why_it_matters": "Zanka je razlog, zakaj Claude Code rešuje prave probleme — vsaka iteracija ga pripelje bližje tvojemu cilju.", "sort_order": 1}, {"id": 9, "section_id": 2, "name": "Context Window", "icon": "ti-brain", "badge_type": "caution", "badge_text": "Pozoren na mejo", "short_desc": "Delovna memoria — koliko pogovora, kode in rezultatov Claude hkrati vidi", "what_it_does": "Context window določa, koliko informacij Claude Code hkrati 'drži v glavi' — pogovor, vsebina datotek, rezultati ukazov. Ko se napolni, se aktivira compaction.", "when_to_use": "Dolge seje ali velike datoteke? Začni nov pogovor ali manjšo nalogo, da ohraniš fokus in kakovost rezultatov.", "when_not": "Ne dodajaj nepotrebnih datotek v kontekst — več šuma pomeni manj fokusa. Daj Claude Code samo tisto, kar res potrebuje za nalogo.", "why_it_matters": "Fokusirana navodila delujejo bolje od razpotegnjenih pogovorov. Manj šuma = boljši rezultati.", "sort_order": 2}, {"id": 10, "section_id": 2, "name": "Compaction", "icon": "ti-arrows-minimize", "badge_type": "when", "badge_text": "Samodejno", "short_desc": "Ko se context napolni, Claude Code sam stisne in povzame — brez tvoje intervencije", "what_it_does": "Ko context window doseže mejo, Claude Code samodejno določi, kaj je mogoče odstraniti ali povzeti — in tako sprosti prostor brez izgube ključnih informacij.", "when_to_use": "Compaction se aktivira samodejno — ti tega ne upravljaš. Zavedaj se ga, ko opaziš, da Claude Code 'pozablja' zgodnejše dele pogovora.", "when_not": "Za kritične dolge naloge razdeli seje. Compaction je pameten, ni pa nezmotljiv — del konteksta se vedno izgubi.", "why_it_matters": "Omogoča dolge delovne seje brez ročnega upravljanja. Claude Code sam skrbi za svojo delovno memorijo.", "sort_order": 3}, {"id": 11, "section_id": 2, "name": "Tools", "icon": "ti-tools", "badge_type": "when", "badge_text": "Osnova agenta", "short_desc": "Orodja odločijo kdaj izvršiti kodo — branje datotek, spletno iskanje, terminal", "what_it_does": "Tools so razlog, zakaj Claude Code ni le chatbot. Namesto da samo vrne besedilo, Claude Code sam odloči, kdaj prebrati datoteko, poiskati na spletu ali zagnati ukaz — in to vgradi v zanko.", "when_to_use": "Bolj ko razumeš, katera orodja so na voljo (branje datotek, terminal, splet), bolje znaš oblikovati naloge.", "when_not": "Orodij ne kličeš ročno — Claude Code jih izbere sam. Fokusiraj se na nalogo, ne na to, katero orodje bo uporabil.", "why_it_matters": "Orodja so ločnica med chatbotom, ki svetuje, in agentom, ki dela v resničnem svetu. Vsako orodje je akcija — ne samo besedilo.", "sort_order": 4}, {"id": 12, "section_id": 2, "name": "Default Mode", "icon": "ti-lock", "badge_type": "when", "badge_text": "Priporočeno", "short_desc": "Claude vpraša za dovoljenje pred vsako datoteko ali ukazom — ti vedno v nadzoru", "what_it_does": "V Default Mode Claude Code pokaže vsako nameravano akcijo — urejanje datoteke, zagon ukaza — in počaka na tvoje dovoljenje. Nič se ne zgodi brez tvojega 'yes'.", "when_to_use": "Vedno, kadar delaš na novem projektu, se učiš, ali delaš na kritičnih sistemih. Default Mode je tvoj varnostni pas.", "when_not": "Za rutinska, dobro znana opravila na testnem okolju je morda počasen — takrat premisli o Auto-accept Mode, a z razumevanjem tveganj.", "why_it_matters": "Nadzor je temelj zaupanja. Default Mode ti da čas, da razumeš, kaj Claude Code dela in zakaj. To je najhitrejši način učenja.", "sort_order": 5}, {"id": 13, "section_id": 2, "name": "Auto-accept Mode", "icon": "ti-bolt", "badge_type": "caution", "badge_text": "Pazi", "short_desc": "Datoteke ureja brez vprašanja — ukazi še vedno čakajo na potrditev", "what_it_does": "V Auto-accept Mode Claude Code ureja datoteke samodejno, brez vsakokratnega dovoljenja. Terminal ukazi (npm install, git push…) pa še vedno zahtevajo potrditev.", "when_to_use": "Za hitrejše iteracije na testnem projektu, ko že zaupate drug drugemu in veš, kaj Claude Code počne.", "when_not": "Ne na produkcijskih sistemih, ne za kodo, ki je nisi pregledal, ne za operacije, ki jih je težko razveljaviti. Hitreje ≠ varneje.", "why_it_matters": "Produktivnostno orodje — a odgovornost za napake se prenese nate. Veš, kaj delaš? Potem pospešuj.", "sort_order": 6}, {"id": 14, "section_id": 2, "name": "Plan Mode", "icon": "ti-clipboard-list", "badge_type": "when", "badge_text": "Premisli najprej", "short_desc": "Claude Code samo bere in planira — nobene spremembe, dokler ne rečeš 'go'", "what_it_does": "V Plan Mode Claude Code uporablja samo bralna orodja — prebere kodo, datoteke, dokumentacijo — in sestavi natančen načrt, kaj bo naredil in v katerem vrstnem redu. Nobene spremembe se ne zgodijo. Ko načrt odobritev, šele takrat preide v izvedbo. Aktiviraš ga z besedo 'plan' v promptu ali s Shift+Tab v terminalu.", "when_to_use": "Pred vsako večjo ali tvegano spremembo: refaktoring, nove funkcionalnosti, migracije, brisanje datotek. Plan Mode je obvezen varnostni korak za kompleksne naloge, kjer napaka pride drago.", "when_not": "Za majhne, enostavne naloge je Plan Mode odvečen korak. Uporabi ga, ko negotovost narašča ali ko sprememb ne moreš zlahka razveljaviti.", "why_it_matters": "Najboljše od obeh svetov: hitrost agenta + nadzor človeka. Preden Claude Code karkoli naredi, točno veš, kaj bo naredil in zakaj. Brez presenečenj, brez neprijetnih odkritij po dejstvu.", "sort_order": 7}], "notes": [{"id": 6, "section_id": 2, "note_type": "youtube", "content": "6bs5b4FltCU", "sort_order": -3}, {"id": 7, "section_id": 2, "note_type": "desc", "content": "Claude Code ne odgovarja — deluje v zanki. Razumevanje te zanke ti da moč, da ga bolje usmeriš: kdaj mu dati svobodo, kdaj ga ustaviti, kdaj ga vprašati za načrt.", "sort_order": -2}, {"id": 8, "section_id": 2, "note_type": "tip", "content": "Med agentno zanko lahko kadarkoli dodaš kontekst, prekinješ izvajanje ali preusmeriš Claude Code — zanka ni zaklenjena.", "sort_order": -1}, {"id": 9, "section_id": 2, "note_type": "subsection-header", "content": "Kateri način izbrati?", "sort_order": 10}, {"id": 10, "section_id": 2, "note_type": "warning", "content": "Auto-accept Mode je hitrejši — a napako je težje ujeti, preden se zgodi. Začni z Default Mode, preklopi šele ko dobro razumeš, kaj Claude Code počne.", "sort_order": 11}]}]}];
+
+let currentLang       = 'sl';
+let currentChapterId  = 1;
+let currentSectionId  = 1;
+let currentView       = 'cards';
+let selectedFeatureId = null;
+
+const LANGS = [
+  {code:'sl',label:'SL'},{code:'it',label:'IT'},{code:'de',label:'DE'},
+  {code:'fr',label:'FR'},{code:'pl',label:'PL'},{code:'en',label:'EN'},
+];
+
+/* ── Sidebar ────────────────────────────────────────────────────── */
+function renderSidebar() {
+  const nav = document.getElementById('sb-nav');
+  nav.innerHTML = '';
+
+  DATA.forEach(ch => {
+    const isActive = ch.id === currentChapterId;
+
+    const chBtn = document.createElement('button');
+    chBtn.className = 'ch-btn' + (isActive ? ' active' : '');
+    chBtn.innerHTML = `
+      <div class="ch-btn-inner">
+        <span class="ch-part">Poglavje ${ch.id}</span>
+        <span class="ch-name">${ch.title}</span>
+      </div>
+      <i class="ti ti-chevron-right ch-chevron" aria-hidden="true"></i>`;
+    chBtn.onclick = () => {
+      currentChapterId = ch.id;
+      currentSectionId = ch.sections[0]?.id ?? 1;
+      selectedFeatureId = null;
+      render();
+    };
+    nav.appendChild(chBtn);
+
+    if (isActive) {
+      const sec = document.createElement('div');
+      sec.className = 'ch-sections open';
+
+      // Objectives
+      sec.innerHTML = `
+        <div class="obj-panel">
+          <div class="obj-title">Learning Objectives</div>
+          <ul class="obj-list">${ch.objectives.map(o=>`<li>${o}</li>`).join('')}</ul>
+        </div>`;
+
+      // Lesson items
+      ch.sections.forEach(s => {
+        const isCur = s.id === currentSectionId;
+        const item = document.createElement('div');
+        item.className = 'sidebar-item' + (isCur ? ' active' : '');
+        item.innerHTML = `
+          <span class="si-lesson">${s.lesson}</span>
+          <span class="si-title">${s.title.split(':')[0].trim()}</span>`;
+        item.onclick = () => { currentSectionId = s.id; selectedFeatureId = null; render(); };
+        sec.appendChild(item);
+      });
+
+      // Reflections
+      if (ch.reflections?.length) {
+        const rp = document.createElement('div');
+        rp.className = 'refl-panel';
+        rp.innerHTML = `<div class="refl-title">Refleksija</div>`;
+        ch.reflections.forEach((r, i) => {
+          const [q, hint] = r.split('|');
+          const id = `refl-${ch.id}-${i}`;
+          rp.innerHTML += `
+            <div class="refl-item" onclick="toggleRefl('${id}')">
+              <i class="ti ti-help-circle" aria-hidden="true"></i><span>${q}</span>
+            </div>
+            <div class="refl-hint" id="${id}">${hint||''}</div>`;
+        });
+        sec.appendChild(rp);
+      }
+
+      nav.appendChild(sec);
+    }
+  });
+
+  // Language switcher
+  const grid = document.getElementById('lang-grid');
+  grid.innerHTML = '';
+  LANGS.forEach(l => {
+    const btn = document.createElement('button');
+    btn.className = 'lang-btn' + (l.code === currentLang ? ' active' : '');
+    btn.textContent = l.label;
+    btn.onclick = () => { currentLang = l.code; render(); };
+    grid.appendChild(btn);
+  });
+}
+
+function toggleRefl(id) { document.getElementById(id)?.classList.toggle('open'); }
+
+/* ── Lesson ─────────────────────────────────────────────────────── */
+function renderLesson() {
+  const ch  = DATA.find(c => c.id === currentChapterId);
+  const sec = ch?.sections.find(s => s.id === currentSectionId);
+  if (!sec) return;
+
+  const panel    = document.getElementById('lesson-panel');
+  const prenotes = [...sec.notes].filter(n => n.sort_order <= 0).sort((a,b) => a.sort_order - b.sort_order);
+  const postnotes= [...sec.notes].filter(n => n.sort_order >  0).sort((a,b) => a.sort_order - b.sort_order);
+  const features = [...sec.features].sort((a,b) => a.sort_order - b.sort_order);
+
+  const parts    = sec.title.split(':');
+  const secTitle = parts[0].trim();
+  const secSub   = parts.length > 1 ? parts.slice(1).join(':').trim() : '';
+
+  let html = `
+    <h1 class="sr-only">Lekcija: ${sec.title}</h1>
+    <div class="sec-lesson">${sec.lesson} · Poglavje ${ch.id}</div>
+    <div class="sec-title">${secTitle}</div>
+    ${secSub ? `<div class="sec-sub">${secSub}</div>` : '<div class="sec-gap"></div>'}
+  `;
+
+  prenotes.forEach(n => { html += renderNote(n); });
+
+  html += `
+    <div class="view-toggle">
+      <span class="view-label">Pogled:</span>
+      <button class="view-btn ${currentView==='cards'?'active':''}" onclick="setView('cards')">
+        <i class="ti ti-layout-grid" aria-hidden="true"></i> Kartice
+      </button>
+      <button class="view-btn ${currentView==='table'?'active':''}" onclick="setView('table')">
+        <i class="ti ti-table" aria-hidden="true"></i> Tabela
+      </button>
+    </div>`;
+
+  // Cards
+  html += `<div class="feature-grid${currentView==='table'?' hide':''}" id="feat-grid">`;
+  features.forEach(f => {
+    html += `<div class="feature-card${f.id===selectedFeatureId?' selected':''}" onclick="selectFeature(${f.id})">
+      <span class="badge badge-${f.badge_type}">${f.badge_text}</span>
+      <p class="feature-name"><i class="ti ${f.icon}" aria-hidden="true"></i>${f.name}</p>
+      <p class="feature-desc">${f.short_desc}</p>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Table
+  html += `<table class="features-table${currentView==='table'?' show':''}" id="feat-table">
+    <thead><tr><th style="width:28%">Koncept</th><th style="width:18%">Tip</th><th>Opis</th></tr></thead>
+    <tbody>`;
+  features.forEach(f => {
+    html += `<tr class="${f.id===selectedFeatureId?'row-selected':''}" onclick="selectFeature(${f.id})">
+      <td><strong><i class="ti ${f.icon}" style="margin-right:.3rem;color:var(--text-ter)"></i>${f.name}</strong></td>
+      <td><span class="badge badge-${f.badge_type}">${f.badge_text}</span></td>
+      <td style="color:var(--text-sec)">${f.short_desc}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+
+  // Inline detail panel 2×2
+  if (selectedFeatureId !== null) {
+    const f = features.find(feat => feat.id === selectedFeatureId);
+    if (f) html += `
+      <div class="detail-panel" id="detail-panel">
+        <div class="detail-header">
+          <div class="detail-title">
+            <i class="ti ${f.icon}" aria-hidden="true"></i>
+            ${f.name}
+            <span class="badge badge-${f.badge_type}">${f.badge_text}</span>
+          </div>
+          <button class="detail-close" onclick="selectFeature(${f.id})">
+            <i class="ti ti-x"></i> Zapri
+          </button>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-cell">
+            <div class="detail-cell-label">Kaj dela</div>
+            <div class="detail-cell-val">${f.what_it_does}</div>
+          </div>
+          <div class="detail-cell">
+            <div class="detail-cell-label">Kdaj uporabiti</div>
+            <div class="detail-cell-val">${f.when_to_use}</div>
+          </div>
+          <div class="detail-cell">
+            <div class="detail-cell-label">Kdaj NE</div>
+            <div class="detail-cell-val">${f.when_not}</div>
+          </div>
+          <div class="detail-cell">
+            <div class="detail-cell-label">Zakaj to šteje</div>
+            <div class="detail-cell-val">${f.why_it_matters}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  postnotes.forEach(n => { html += renderNote(n); });
+
+  panel.innerHTML = html;
+
+  if (selectedFeatureId !== null) {
+    requestAnimationFrame(() =>
+      document.getElementById('detail-panel')?.scrollIntoView({behavior:'smooth', block:'nearest'})
+    );
+  }
+}
+
+function renderNote(n) {
+  switch (n.note_type) {
+    case 'youtube':
+      return `<div class="note-youtube">
+        <iframe src="https://www.youtube.com/embed/${n.content}?rel=0"
+          title="Lekcija — video" allowfullscreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+        </iframe></div>`;
+    case 'desc':
+      return `<p class="note-desc">${n.content}</p>`;
+    case 'tip':
+      return `<div class="note-tip"><i class="ti ti-info-circle" aria-hidden="true"></i><span>${n.content}</span></div>`;
+    case 'warning':
+      return `<div class="note-warning"><i class="ti ti-alert-triangle" aria-hidden="true"></i><span>${n.content}</span></div>`;
+    case 'subsection-header':
+      return `<div class="note-subsection">${n.content}</div>`;
+    default: return '';
+  }
+}
+
+/* ── View + Feature select ──────────────────────────────────────── */
+function setView(v) { currentView = v; renderLesson(); }
+
+function selectFeature(id) {
+  selectedFeatureId = (selectedFeatureId === id) ? null : id;
+  renderLesson();
+}
+
+/* ── Boot ───────────────────────────────────────────────────────── */
+function render() { renderSidebar(); renderLesson(); }
+render();
+</script>
+</body>
+</html>

@@ -499,8 +499,7 @@ let currentSectionId  = null;
 let currentView       = 'cards';
 let selectedFeatureId = null;
 
-// Quiz config — number of questions drawn per tier
-const QUIZ_COUNTS = { lesson: 3, chapter: 10, total: 20 };
+// Quiz config — all questions shown (no limit per tier)
 // Active quiz object (null when no quiz running)
 // { scope:'lesson'|'chapter'|'total', pool:[...], idx:0, correct:0, answered:false }
 let quiz = null;
@@ -525,7 +524,6 @@ function renderSidebar() {
         <span class="ch-part">Poglavje ${ch.id}</span>
         <span class="ch-name">${ch.title}</span>
       </div>
-      <span class="ch-quiz-btn" title="Kviz poglavja ${ch.id}" data-quiz="${ch.id}"><i class="ti ti-brain" aria-hidden="true"></i></span>
       <i class="ti ti-chevron-right ch-chevron" aria-hidden="true"></i>`;
     chBtn.onclick = () => {
       currentChapterId = ch.id;
@@ -533,11 +531,6 @@ function renderSidebar() {
       selectedFeatureId = null;
       quiz = null;
       render();
-    };
-    // Quiz icon: don't trigger chapter toggle
-    chBtn.querySelector('.ch-quiz-btn').onclick = (e) => {
-      e.stopPropagation();
-      startQuiz('chapter', ch.id);
     };
     nav.appendChild(chBtn);
 
@@ -636,6 +629,23 @@ function renderChapterOverview(ch) {
           <div class="ch-refl-hint" id="${id}">${hint || ''}</div>`;
     });
     html += `</div></div>`;
+  }
+
+  // Chapter quiz block (inline, at bottom of overview)
+  const chAllQ = collectQuestions('chapter', ch.id);
+  if (chAllQ.length) {
+    html += `<div id="quiz-anchor"></div>`;
+    if (quiz && quiz.scope === 'chapter' && quiz.id === ch.id) {
+      html += quizEngineHTML();
+    } else {
+      html += `
+        <div class="quiz-start-block">
+          <div class="quiz-start-icon">🧠</div>
+          <div class="quiz-start-title">Preveri poglavje</div>
+          <div class="quiz-start-desc">${chAllQ.length} vprašanj iz vseh lekcij tega poglavja. Naključni vrstni red, rezultat na koncu.</div>
+          <button class="quiz-btn" onclick="startQuiz('chapter', ${ch.id})"><i class="ti ti-player-play"></i> Začni kviz</button>
+        </div>`;
+    }
   }
 
   html += `</div>`;
@@ -759,12 +769,11 @@ function renderLesson() {
     if (quiz && quiz.scope === 'lesson' && quiz.id === sec.id) {
       html += quizEngineHTML();
     } else {
-      const n = Math.min(QUIZ_COUNTS.lesson, sec.questions.length);
       html += `
         <div class="quiz-start-block">
           <div class="quiz-start-icon">🧠</div>
           <div class="quiz-start-title">Preveri lekcijo</div>
-          <div class="quiz-start-desc">${n} naključnih vprašanj o tej lekciji. Brez ponavljanj, rezultat na koncu.</div>
+          <div class="quiz-start-desc">${sec.questions.length} vprašanj o tej lekciji. Naključni vrstni red, rezultat na koncu.</div>
           <button class="quiz-btn" onclick="startQuiz('lesson', ${sec.id})"><i class="ti ti-player-play"></i> Začni kviz</button>
         </div>`;
     }
@@ -834,11 +843,16 @@ function collectQuestions(scope, id) {
 function startQuiz(scope, id) {
   const all = collectQuestions(scope, id);
   if (!all.length) return;
-  const count = Math.min(QUIZ_COUNTS[scope], all.length);
-  quiz = { scope, id, pool: shuffle(all).slice(0, count), idx: 0, correct: 0, answered: false, selected: null };
+  quiz = { scope, id, pool: shuffle(all), idx: 0, correct: 0, answered: false, selected: null };
 
   if (scope === 'lesson') {
     renderLesson();
+    requestAnimationFrame(() =>
+      document.getElementById('quiz-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    );
+  } else if (scope === 'chapter') {
+    currentSectionId = null;
+    render();
     requestAnimationFrame(() =>
       document.getElementById('quiz-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     );
@@ -877,8 +891,8 @@ function exitQuiz() {
 
 function rerenderQuiz() {
   if (!quiz) return;
-  if (quiz.scope === 'lesson') renderLesson();
-  else renderQuizPanel();
+  if (quiz.scope === 'total') renderQuizPanel();
+  else renderLesson();
 }
 
 // Renders the shared quiz UI (question + options + progress, or final score)
@@ -977,7 +991,7 @@ function renderQuizPanel() {
 /* ── Boot ───────────────────────────────────────────────────────── */
 function render() {
   renderSidebar();
-  if (quiz && (quiz.scope === 'chapter' || quiz.scope === 'total')) renderQuizPanel();
+  if (quiz && quiz.scope === 'total') renderQuizPanel();
   else renderLesson();
 }
 render();
